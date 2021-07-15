@@ -266,10 +266,48 @@ class Approximation
     }
 
     /**
-     * @return float|int
+     * @return float[]
      */
-    public function getDiscrep(array $values)
+    public function getDiscrepancy(array $values): array
     {
-        return max(array_map('abs', $this->subtract($this->yPoints, $values)));
+        /** @var float[] $discrepancy относительная ошибка */
+        $discrepancy = [];
+        /** @var float[] $deviation отклонение */
+        $deviation = [];
+
+        foreach ($this->yPoints as $key => $sourceY) {
+            $resultY = $values[$key];
+
+            if (abs($sourceY) < 1 || abs($resultY) < 1) {
+                $deviation[] = abs($sourceY - $resultY);
+            } else {
+                $discrepancy[] = abs((($sourceY - $values[$key]) / $values[$key])) * 100;
+            }
+        }
+
+        return [
+            'discrepancy' => max($discrepancy),
+            'deviation'   => max($deviation),
+        ];
+    }
+
+    /**
+     * Возвращает коэффициент детерминации.
+     * @param array $values
+     * @return float
+     */
+    public function getDeterminationCoefficient(array $values): float
+    {
+        $sourceYAvg = array_sum($this->yPoints) / count($this->yPoints);
+
+        $Qr = array_sum(array_map(static function ($resultY) use ($sourceYAvg) {
+            return pow($resultY - $sourceYAvg, 2);
+        }, $values));
+
+        $Q = array_sum(array_map(static function ($resultY) use ($sourceYAvg) {
+            return pow($resultY - $sourceYAvg, 2);
+        }, $this->yPoints));
+
+        return $Qr / $Q;
     }
 }

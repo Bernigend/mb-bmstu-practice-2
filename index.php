@@ -2,6 +2,12 @@
 
 require_once 'src/Approximation.php';
 
+function printFloat($value): string
+{
+    return sprintf('%.6f', $value);
+}
+
+# Запускаем обработку входных данных
 if (isset($_GET['calculate'])) {
     header('Content-Type: application/json');
 
@@ -21,7 +27,7 @@ if (isset($_GET['calculate'])) {
             $y[] = $data[1];
         }
         if (!feof($handle)) {
-            echo "Ошибка: fgets() неожиданно потерпел неудачу\n";
+            die("Ошибка: fgets() неожиданно потерпел неудачу\n");
         }
         fclose($handle);
     }
@@ -52,14 +58,18 @@ if (isset($_GET['calculate'])) {
     $coefficients = $ort->getCoefficients();
     array_walk($coefficients, static function (&$arCoefficients) {
         $arCoefficients = array_map(static function ($arItem) {
-            return sprintf('%.6f', $arItem);
+            return printFloat($arItem);
         }, $arCoefficients);
     });
 
+    $discrepancyData = $ort->getDiscrepancy($result);
+
     $data = [
-        'plot' => $plotData,
-        'coefficients' => $coefficients,
-        'discrepancy' => $ort->getDiscrep($result),
+        'plot'          => $plotData,
+        'coefficients'  => $coefficients,
+        'discrepancy'   => printFloat($discrepancyData['discrepancy']).'%',
+        'deviation'     => printFloat($discrepancyData['deviation']),
+        'determination' => printFloat($ort->getDeterminationCoefficient($result)),
     ];
 
     echo json_encode($data);
@@ -81,7 +91,7 @@ if (isset($_GET['calculate'])) {
     <script type="text/javascript" src="./js/jquery.min.js"></script>
     <script type="text/javascript" src="./js/jquery.flot.js"></script>
 
-    <title>Hello, world!</title>
+    <title>Практика. МНК</title>
 </head>
 <body>
 <div class="container">
@@ -115,7 +125,9 @@ if (isset($_GET['calculate'])) {
             </div>
         </div>
         <div class="mb-3 row">
-            <button type="submit" class="btn btn-primary mb-3">Продолжить</button>
+            <div class="col-sm-12">
+                <button type="submit" class="btn btn-primary mb-3 w-100">Продолжить</button>
+            </div>
         </div>
     </form>
 
@@ -132,9 +144,21 @@ if (isset($_GET['calculate'])) {
                     <div class="mt-5"></div>
 
                     <div class="mb-3 row">
-                        <label for="inputMeasure" class="col-sm-6 col-form-label">Величина макс. относительной ошибки</label>
+                        <label for="outputDiscrepancy" class="col-sm-6 col-form-label">Величина макс. относительной ошибки</label>
                         <div class="col-sm-6">
-                            <input type="number" readonly id="outputDiscrepancy" class="form-control-plaintext" value="0">
+                            <input type="text" readonly id="outputDiscrepancy" class="form-control-plaintext" value="0%">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="outputDeviation" class="col-sm-6 col-form-label">Наибольшее отклонение (при значениях около нуля)</label>
+                        <div class="col-sm-6">
+                            <input type="text" readonly id="outputDeviation" class="form-control-plaintext" value="0">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="outputDetermination" class="col-sm-6 col-form-label">Коэффициент детерминации</label>
+                        <div class="col-sm-6">
+                            <input type="text" readonly id="outputDetermination" class="form-control-plaintext" value="0">
                         </div>
                     </div>
 
@@ -161,6 +185,7 @@ if (isset($_GET['calculate'])) {
 <script>
     $(function () {
         const resultModal = new bootstrap.Modal(document.getElementById('resultModal'));
+        const $placeholder = $("#placeholder");
 
         $('#form').on('submit', function (event) {
             event.preventDefault();
@@ -168,7 +193,7 @@ if (isset($_GET['calculate'])) {
             const $form = $(this);
             const formData = new FormData(this);
 
-            $("#placeholder").html('');
+            $placeholder.html('');
 
             $.ajax({
                 type: 'POST',
@@ -202,6 +227,12 @@ if (isset($_GET['calculate'])) {
                     data.discrepancy = data.discrepancy || '';
                     $("#outputDiscrepancy").val(data.discrepancy || '');
 
+                    data.deviation = data.deviation || '';
+                    $("#outputDeviation").val(data.deviation || '');
+
+                    data.determination = data.determination || '';
+                    $("#outputDetermination").val(data.determination || '');
+
                     data.coefficients = data.coefficients || {};
                     data.coefficients.a = data.coefficients.a || [];
                     data.coefficients.b = data.coefficients.b || [];
@@ -216,8 +247,6 @@ if (isset($_GET['calculate'])) {
                         let c = typeof data.coefficients.c[index] !== "undefined" ? data.coefficients.c[index] : 0;
 
                         $("<tr><th scope='row'>"+index+"</th><td>"+a+"</td></tr>").appendTo($coefficientsTable);
-
-                        console.log(a, b, c);
                     });
 
                 }, 1000);
@@ -234,16 +263,19 @@ if (isset($_GET['calculate'])) {
             "z-index": 9999,
         }).appendTo("body");
 
-        $("#placeholder").bind("plothover", function (event, pos, item) {
+        const $tooltip = $("#tooltip");
+
+        $placeholder.bind("plothover", function (event, pos, item) {
             if (item) {
-                var x = item.datapoint[0].toFixed(2),
+                let x = item.datapoint[0].toFixed(2),
                     y = item.datapoint[1].toFixed(2);
 
-                $("#tooltip").html(item.series.label + " of " + x + " = " + y)
+                $tooltip
+                    .html(item.series.label + " of " + x + " = " + y)
                     .css({top: item.pageY+5, left: item.pageX+5})
                     .fadeIn(200);
             } else {
-                $("#tooltip").hide();
+                $tooltip.hide();
             }
         });
     });
@@ -261,98 +293,3 @@ if (isset($_GET['calculate'])) {
 -->
 </body>
 </html>
-
-<?php return ?>
-
-<html>
-<head>
-    <title>Тест графиков</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-
-    <script type="text/javascript" src="./js/jquery.min.js"></script>
-    <script type="text/javascript" src="./js/jquery.flot.js"></script>
-</head>
-<body>
-<form action="?calculate" id="form" enctype="multipart/form-data">
-    <label>
-        <span>CSV file:</span> <br>
-        <input type="file" name="input_csv">
-    </label>
-    <br>
-    <label>
-        <span>Полином</span>
-        <input type="text" name="measure" value="5">
-    </label>
-    <br>
-    <input type="submit" value="Продолжить">
-</form>
-<div>
-    <h3>Примеры файлов с данными</h3>
-    <a href="./input1.csv" download="true">input1.csv</a> <br>
-    <a href="./input2.csv" download="true">input2.csv</a> <br>
-    <a href="./input3.csv" download="true">input3.csv</a> <br>
-</div>
-<div id="placeholder" style="width:100%;height:500px"></div>
-<script>
-    $(function () {
-        $('#form').on('submit', function (event) {
-            event.preventDefault();
-
-            const $form = $(this);
-            const formData = new FormData(this);
-
-            $.ajax({
-                type: 'POST',
-                url: $form.attr('action'),
-                data: formData,
-                dataType: 'json',
-                cache: false,
-                contentType: false,
-                processData: false,
-            }).done(function (data) {
-                console.log(data);
-                $.plot("#placeholder", data.plot, {
-                    series: {
-                        lines: {
-                            show: true
-                        },
-                        points: {
-                            show: true
-                        }
-                    },
-                    grid: {
-                        hoverable: true,
-                        clickable: true
-                    },
-                });
-            }).fail(console.error);
-        });
-
-        $("<div id='tooltip'></div>").css({
-            position: "absolute",
-            display: "none",
-            border: "1px solid #fdd",
-            padding: "2px",
-            "background-color": "#fee",
-            opacity: 0.80
-        }).appendTo("body");
-
-        $("#placeholder").bind("plothover", function (event, pos, item) {
-            if (item) {
-                var x = item.datapoint[0].toFixed(2),
-                    y = item.datapoint[1].toFixed(2);
-
-                $("#tooltip").html(item.series.label + " of " + x + " = " + y)
-                    .css({top: item.pageY+5, left: item.pageX+5})
-                    .fadeIn(200);
-            } else {
-                $("#tooltip").hide();
-            }
-        });
-    });
-</script>
-</body>
-</html>
-
