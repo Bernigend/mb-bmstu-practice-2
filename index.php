@@ -150,7 +150,7 @@ if (isset($_GET['calculate'])) {
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label for="outputDeviation" class="col-sm-6 col-form-label">Наибольшее отклонение (при значениях около нуля)</label>
+                        <label for="outputDeviation" class="col-sm-6 col-form-label">Наибольшее отклонение</label>
                         <div class="col-sm-6">
                             <input type="text" readonly id="outputDeviation" class="form-control-plaintext" value="0">
                         </div>

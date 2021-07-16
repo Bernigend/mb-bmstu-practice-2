@@ -73,6 +73,7 @@ class Approximation
             else
             {
                 $v[] = $this->subtract($this->xPoints, end($q)/end($s));
+
                 if ($j > 0) {
                     $v[$j+1] = $this->subtract(
                         $this->multi(end($v), prev($v)),
@@ -116,6 +117,7 @@ class Approximation
     }
 
     /**
+     * Перемножает из элементов первого массива в зависимости от значения второго аргумента.
      * @param array $array
      * @param $subtract
      * @return array
@@ -134,7 +136,7 @@ class Approximation
     }
 
     /**
-     * Перемножает элементы первого массива.
+     * Перемножает элементы первого массива в зависимости от значения второго аргумента.
      * @param array $array
      * @param $multi
      * @return float[]
@@ -183,10 +185,10 @@ class Approximation
 
             $c[] = array_fill(0, $k+2, 1.0);
 
-            for ($j = 0; $j <= $k; $j++) {
-                $c[$k+1][$j] = (($j==0 ? 0.0 : $c[$k][$j-1]) - $c[$k][$j] * $aa - (($j==$k))
-                    ? 0.0
-                    : $c[$k-1][$j] * $bb);
+            for ($j=0; $j <= $k; $j++) {
+                $c[$k+1][$j] = ($j==0 ? 0.0 : $c[$k][$j-1])
+                    - $c[$k][$j] * $aa
+                    - (($j==$k) ? 0.0 : $c[$k-1][$j] * $bb);
             }
         }
 
@@ -278,11 +280,11 @@ class Approximation
         foreach ($this->yPoints as $key => $sourceY) {
             $resultY = $values[$key];
 
-            if (abs($sourceY) < 1 || abs($resultY) < 1) {
-                $deviation[] = abs($sourceY - $resultY);
-            } else {
+            if (!(abs($sourceY) < 1 || abs($resultY) < 1)) {
                 $discrepancy[] = abs((($sourceY - $values[$key]) / $values[$key])) * 100;
             }
+
+            $deviation[] = abs($sourceY - $resultY);
         }
 
         return [
