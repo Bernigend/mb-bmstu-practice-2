@@ -70,6 +70,8 @@ if (isset($_GET['calculate'])) {
         'discrepancy'   => printFloat($discrepancyData['discrepancy']).'%',
         'deviation'     => printFloat($discrepancyData['deviation']),
         'determination' => printFloat($ort->getDeterminationCoefficient($result)),
+        'x_points'      => $x,
+        'y_points'      => $y,
     ];
 
     echo json_encode($data);
@@ -85,11 +87,12 @@ if (isset($_GET['calculate'])) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-
     <script type="text/javascript" src="./js/jquery.min.js"></script>
     <script type="text/javascript" src="./js/jquery.flot.js"></script>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <script type="text/javascript" src="./js/bootstrap.bundle.min.js"></script>
 
     <title>Практика. МНК</title>
 </head>
@@ -235,18 +238,12 @@ if (isset($_GET['calculate'])) {
 
                     data.coefficients = data.coefficients || {};
                     data.coefficients.a = data.coefficients.a || [];
-                    data.coefficients.b = data.coefficients.b || [];
-                    data.coefficients.c = data.coefficients.c || [];
 
                     const $coefficientsTable = $("#coefficients-table");
                     $coefficientsTable.html('');
 
                     data.coefficients.a.forEach(function (currentValue, index) {
-                        let a = currentValue;
-                        let b = typeof data.coefficients.b[index] !== "undefined" ? data.coefficients.b[index] : 0;
-                        let c = typeof data.coefficients.c[index] !== "undefined" ? data.coefficients.c[index] : 0;
-
-                        $("<tr><th scope='row'>"+index+"</th><td>"+a+"</td></tr>").appendTo($coefficientsTable);
+                        $("<tr><th scope='row'>"+index+"</th><td>"+currentValue+"</td></tr>").appendTo($coefficientsTable);
                     });
 
                 }, 1000);
@@ -280,16 +277,5 @@ if (isset($_GET['calculate'])) {
         });
     });
 </script>
-
-<!-- Optional JavaScript; choose one of the two! -->
-
-<!-- Option 1: Bootstrap Bundle with Popper -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-
-<!-- Option 2: Separate Popper and Bootstrap JS -->
-<!--
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
--->
 </body>
 </html>
