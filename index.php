@@ -4,7 +4,7 @@ require_once 'src/Approximation.php';
 
 function printFloat($value): string
 {
-    return sprintf('%.6f', $value);
+    return sprintf("%.6e", $value);
 }
 
 # Запускаем обработку входных данных
@@ -55,11 +55,9 @@ if (isset($_GET['calculate'])) {
         $plotData[1]['data'][] = [$xPoint, $result[$xKey]];
     }
 
-    $coefficients = $ort->getCoefficients();
-    array_walk($coefficients, static function (&$arCoefficients) {
-        $arCoefficients = array_map(static function ($arItem) {
-            return printFloat($arItem);
-        }, $arCoefficients);
+    $coefficients = $ort->getCoefficients()['a'] ?? [];
+    array_walk($coefficients, static function (&$arCoefficient) {
+        $arCoefficient = printFloat($arCoefficient);
     });
 
     $discrepancyData = $ort->getDiscrepancy($result);
@@ -218,8 +216,8 @@ if (isset($_GET['calculate'])) {
                                 show: true
                             },
                             points: {
-                                show: true
-                            }
+                                show: false,
+                            },
                         },
                         grid: {
                             hoverable: true,
@@ -236,13 +234,11 @@ if (isset($_GET['calculate'])) {
                     data.determination = data.determination || '';
                     $("#outputDetermination").val(data.determination || '');
 
-                    data.coefficients = data.coefficients || {};
-                    data.coefficients.a = data.coefficients.a || [];
-
+                    data.coefficients = data.coefficients || [];
                     const $coefficientsTable = $("#coefficients-table");
                     $coefficientsTable.html('');
 
-                    data.coefficients.a.forEach(function (currentValue, index) {
+                    data.coefficients.forEach(function (currentValue, index) {
                         $("<tr><th scope='row'>"+index+"</th><td>"+currentValue+"</td></tr>").appendTo($coefficientsTable);
                     });
 
