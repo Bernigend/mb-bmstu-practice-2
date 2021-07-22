@@ -213,7 +213,8 @@ if (isset($_GET['calculate'])) {
                     $.plot("#placeholder", data.plot, {
                         series: {
                             lines: {
-                                show: true
+                                show: true,
+                                lineWidth: 5,
                             },
                             points: {
                                 show: false,
